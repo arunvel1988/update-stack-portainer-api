@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-P_USER=${P_USER:-"root"}
-P_PASS=${P_PASS:-"rootroot"}
-P_URL=${P_URL:-"http://10.11.9.200:9000"}
+P_USER=${P_USER:-"admin"}
+P_PASS=${P_PASS:-"admin"}
+P_URL=${P_URL:-"http://localhost:9000"}
 P_PRUNE=${P_PRUNE:-"false"}
 
 if [ -z ${1+x} ]; then
@@ -18,25 +18,16 @@ TARGET_YML="$2"
 
 echo "Updating $TARGET"
 
-echo "Logging in..."
-P_TOKEN=$(curl -s -X POST -H "Content-Type: application/json;charset=UTF-8" -d "{\"username\":\"$P_USER\",\"password\":\"$P_PASS\"}" "$P_URL/api/auth")
-if [[ $P_TOKEN = *"jwt"* ]]; then
-  echo " ... success"
-else
-  echo "Result: failed to login"
-  exit 1
-fi
-T=$(echo $P_TOKEN | awk -F '"' '{print $4}')
-echo "Token: $T"
+echo $token
 
-INFO=$(curl -s -H "Authorization: Bearer $T" "$P_URL/api/endpoints/1/docker/info")
-CID=$(echo "$INFO" | awk -F '"Cluster":{"ID":"' '{print $2}' | awk -F '"' '{print $1}')
-echo "Cluster ID: $CID"
+#INFO=$(curl -s -H "Authorization: Bearer $token" "$P_URL/api/endpoints/1/dccker/info")
+#CID=$(echo "$INFO" | awk -F '"Cluster":{"ID":"' '{print $2}' | awk -F '"' '{print $1}')
+#echo "Cluster ID: $CID"
 
 echo "Getting stacks..."
-STACKS=$(curl -s -H "Authorization: Bearer $T" "$P_URL/api/stacks")
+STACKS=$(curl -s -H "Authorization: Bearer $token" "$P_URL/api/stacks")
 
-#echo "/---" && echo $STACKS && echo "\\---"
+echo "/---" && echo $STACKS && echo "\\---"
 
 found=0
 stack=$(echo "$STACKS"|jq --arg TARGET "$TARGET" -jc '.[]| select(.Name == $TARGET)')
@@ -73,7 +64,7 @@ echo "Updating stack..."
 UPDATE=$(curl -s \
 "$P_URL/api/stacks/$sid?endpointId=1" \
 -X PUT \
--H "Authorization: Bearer $T" \
+-H "Authorization: Bearer $token" \
 -H "Content-Type: application/json;charset=UTF-8" \
             -H 'Cache-Control: no-cache'  \
             --data-binary "@json.tmp"
